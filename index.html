@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Root mu 預約表單</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1410; --paper: #faf7f2; --cream: #f0ead8;
+  --gold: #c8a96e; --gold-light: #e8d5a8;
+  --rust: #b85c38; --sage: #7a9e7e;
+  --muted: #8a7f72; --border: #d4c9b0;
+  --line-green: #06C755;
+  --booked-bg: #3a2a1e; --booked-text: #a08070;
+}
+body { background:var(--paper); color:var(--ink); font-family:'Noto Serif TC',serif; padding:24px 12px 80px; min-height:100vh; }
+.container { max-width:860px; margin:0 auto; }
+
+/* ── Header ── */
+.header { text-align:center; padding:28px 0 22px; border-bottom:1px solid var(--border); margin-bottom:24px; position:relative; }
+.header::before,.header::after { content:'◆'; color:var(--gold); font-size:9px; position:absolute; bottom:-5px; left:50%; }
+.header::before { transform:translateX(-24px); } .header::after { transform:translateX(16px); }
+.brand-name { font-family:'Cormorant Garamond',serif; font-size:11px; letter-spacing:8px; color:var(--gold); text-transform:uppercase; margin-bottom:6px; font-weight:300; }
+.year-label { font-family:'Cormorant Garamond',serif; font-size:10px; letter-spacing:5px; color:var(--gold-light); margin-bottom:10px; font-weight:300; }
+.title { font-family:'Cormorant Garamond',serif; font-size:clamp(26px,5vw,42px); font-weight:300; letter-spacing:4px; color:var(--gold-light); margin-bottom:8px; line-height:1.1; }
+.subtitle-row { display:flex; align-items:baseline; justify-content:center; gap:14px; }
+.subtitle-zh { font-size:11px; color:var(--gold-light); letter-spacing:4px; font-weight:300; opacity:0.8; }
+.subtitle-ja { font-size:9px; color:var(--gold-light); letter-spacing:2px; font-weight:300; opacity:0.6; }
+
+/* ── Section label ── */
+.sec { font-family:'Cormorant Garamond',serif; font-size:10px; letter-spacing:5px; color:var(--gold); text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
+.sec::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ── Month selector (home) ── */
+#homePage { }
+.month-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-bottom:24px; }
+.month-card { border:1px solid var(--border); border-radius:4px; padding:20px 12px; text-align:center; cursor:pointer; background:white; transition:all 0.15s; position:relative; }
+.month-card:hover:not(.closed) { border-color:var(--gold); background:var(--cream); }
+.month-card.closed { opacity:0.45; cursor:not-allowed; background:var(--cream); }
+.month-card.closed::after { content:'暫停預約'; font-size:9px; color:var(--rust); letter-spacing:1px; display:block; margin-top:4px; }
+.month-num { font-family:'Cormorant Garamond',serif; font-size:36px; font-weight:300; color:var(--gold); line-height:1; }
+.month-zh  { font-size:11px; color:var(--muted); margin-top:4px; letter-spacing:2px; }
+.month-en  { font-size:9px; color:var(--border); letter-spacing:2px; margin-top:2px; }
+
+/* ── Back btn ── */
+.back-btn { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); letter-spacing:2px; cursor:pointer; border:1px solid var(--border); padding:6px 14px; border-radius:2px; margin-bottom:20px; background:white; transition:all 0.12s; }
+.back-btn:hover { border-color:var(--gold); color:var(--ink); }
+
+/* ── Calendar ── */
+.cal-wrap { border:1px solid var(--border); border-radius:2px; margin-bottom:12px; box-shadow:0 2px 12px rgba(0,0,0,0.06); background:white; }
+.cal-head { background:var(--ink); color:white; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; border-radius:2px 2px 0 0; }
+.cal-head-month { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; letter-spacing:2px; }
+.cal-head-year  { font-family:'Cormorant Garamond',serif; font-size:13px; color:var(--gold-light); letter-spacing:4px; }
+.cal-wdays { display:grid; grid-template-columns:repeat(7,1fr); background:var(--cream); border-bottom:1px solid var(--border); }
+.cal-wday  { text-align:center; padding:6px 2px; font-size:10px; color:var(--muted); }
+.cal-wday:first-child { color:var(--rust); } .cal-wday:last-child { color:var(--sage); }
+.cal-grid  { display:grid; grid-template-columns:repeat(7,1fr); }
+
+.cal-cell { border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:5px 4px; display:flex; flex-direction:column; gap:3px; min-height:105px; background:white; position:relative; }
+.cal-cell:nth-child(7n) { border-right:none; }
+.cal-cell.empty { background:var(--cream); opacity:0.5; }
+.cal-cell.day-off-cell { background:var(--paper); justify-content:center; align-items:center; padding-top:5px; }
+.cal-cell.day-off-cell .cal-cell-num { position:absolute; top:5px; left:5px; }
+.cal-cell.selected-cell { background:#f5efe3; }
+.cal-cell-num { font-family:'Cormorant Garamond',serif; font-size:13px; line-height:1; margin-bottom:2px; color:var(--ink); }
+.cal-cell.sun .cal-cell-num { color:var(--rust); } .cal-cell.sat .cal-cell-num { color:var(--sage); }
+.cal-cell.day-off-cell .cal-cell-num { color:var(--muted); }
+
+.rest-label { font-size:11px; color:#c8a882; text-align:center; padding:6px 10px; background:#3a2410; border:1px solid #2a1a0c; border-radius:6px; letter-spacing:3px; white-space:nowrap; width:fit-content; }
+
+.slot-tag { display:block; font-size:10px; padding:4px 3px; text-align:center; background:var(--cream); color:var(--muted); border:1px solid var(--border); border-radius:2px; cursor:pointer; transition:all 0.1s; line-height:1.2; white-space:nowrap; -webkit-tap-highlight-color:transparent; }
+.slot-tag:hover   { background:var(--gold-light); border-color:var(--gold); color:var(--ink); }
+.slot-tag.picked  { background:var(--ink); color:white; border-color:var(--ink); }
+.slot-tag.booked  { background:var(--booked-bg); color:var(--booked-text); border-color:#2a1e14; cursor:default; text-decoration:line-through; }
+
+/* ── Legend ── */
+.legend { display:flex; gap:14px; flex-wrap:wrap; font-size:10px; color:var(--muted); margin-bottom:14px; }
+.leg-dot { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+.leg-item { display:flex; align-items:center; gap:5px; }
+
+/* ── Extra note ── */
+.extra-box { background:white; border:1px solid var(--border); border-left:3px solid var(--gold); padding:12px 16px; margin-bottom:16px; font-size:12px; color:var(--muted); line-height:1.9; }
+.extra-box strong { color:var(--ink); }
+.badge-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.badge { display:inline-block; padding:2px 10px; border:1px dashed var(--gold); border-radius:2px; font-size:12px; color:var(--gold); font-family:'Cormorant Garamond',serif; background:rgba(200,169,110,0.05); }
+.badge-red { border-color:var(--rust); color:var(--rust); background:rgba(184,92,56,0.05); }
+.surcharge { font-size:9px; background:var(--rust); color:white; border-radius:2px; padding:1px 5px; margin-left:3px; font-family:'Noto Serif TC',serif; vertical-align:middle; }
+.extra-encourage { margin-top:10px; font-size:13px; color:var(--ink); line-height:2; padding:10px 14px; background:var(--cream); border-left:3px solid var(--gold); border-radius:0 4px 4px 0; letter-spacing:0.5px; }
+
+/* ── Services ── */
+.svc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:8px; margin-bottom:16px; }
+.svc-item { display:flex; align-items:center; gap:8px; padding:9px 12px; background:white; border:1px solid var(--border); border-radius:2px; cursor:pointer; font-size:12px; color:var(--ink); transition:all 0.12s; user-select:none; -webkit-tap-highlight-color:transparent; }
+.svc-item:hover { border-color:var(--gold); background:var(--cream); }
+.svc-item.on { background:var(--ink); color:white; border-color:var(--ink); }
+.svc-check { width:14px; height:14px; border:1px solid var(--border); border-radius:2px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px; }
+.svc-item.on .svc-check { background:var(--gold); border-color:var(--gold); color:white; }
+
+/* ── Summary ── */
+.summary { display:none; background:white; border:1px solid var(--border); border-left:3px solid var(--gold); padding:14px 16px; margin-bottom:16px; }
+.summary.show { display:block; }
+.summary-title { font-size:10px; letter-spacing:3px; color:var(--gold); margin-bottom:10px; font-family:'Cormorant Garamond',serif; }
+.summary-list { list-style:none; display:flex; flex-direction:column; gap:6px; }
+.summary-list li { font-size:12px; color:var(--ink); display:flex; align-items:center; gap:8px; }
+.s-num { font-family:'Cormorant Garamond',serif; font-size:15px; color:var(--gold); min-width:18px; }
+.s-del { margin-left:auto; font-size:10px; color:var(--muted); cursor:pointer; border:1px solid var(--border); padding:1px 6px; border-radius:2px; flex-shrink:0; }
+.s-del:hover { background:var(--rust); color:white; border-color:var(--rust); }
+
+/* ── LINE btn ── */
+.line-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; background:var(--line-green); color:white; border:none; border-radius:4px; font-family:'Noto Serif TC',serif; font-size:15px; letter-spacing:3px; text-decoration:none; transition:background 0.15s; margin-bottom:8px; }
+.line-btn:hover { background:#05b34c; }
+.line-btn svg { width:22px; height:22px; fill:white; flex-shrink:0; }
+.line-hint { text-align:center; font-size:10px; color:var(--muted); line-height:1.8; margin-bottom:20px; }
+.note { font-size:10px; color:var(--muted); text-align:center; line-height:1.9; padding-bottom:8px; }
+
+/* ── Admin ── */
+.admin-btn { position:fixed; bottom:18px; right:18px; background:rgba(26,20,16,0.65); color:rgba(255,255,255,0.4); border:none; border-radius:50%; width:36px; height:36px; font-size:14px; cursor:pointer; z-index:50; display:flex; align-items:center; justify-content:center; }
+.admin-btn:hover { background:rgba(26,20,16,0.9); color:white; }
+.admin-overlay { display:none; position:fixed; inset:0; background:rgba(26,20,16,0.82); z-index:100; align-items:center; justify-content:center; }
+.admin-overlay.open { display:flex; }
+.admin-card { background:var(--paper); border:1px solid var(--border); width:min(600px,96vw); max-height:90vh; display:flex; flex-direction:column; border-radius:2px; }
+.admin-hd { background:var(--ink); color:white; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; border-radius:2px 2px 0 0; }
+.admin-hd h3 { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:18px; letter-spacing:2px; }
+.admin-x { background:none; border:none; color:rgba(255,255,255,0.55); font-size:20px; cursor:pointer; }
+.admin-x:hover { color:white; }
+.admin-body { overflow-y:auto; padding:18px; flex:1; }
+.login-wrap { display:flex; flex-direction:column; gap:14px; }
+.login-wrap label { font-size:11px; letter-spacing:3px; color:var(--muted); }
+.login-wrap input { background:white; border:1px solid var(--border); border-radius:2px; padding:11px 14px; font-family:'Noto Serif TC',serif; font-size:14px; color:var(--ink); outline:none; width:100%; }
+.login-wrap input:focus { border-color:var(--gold); }
+.login-btn { padding:12px; background:var(--ink); color:white; border:none; border-radius:2px; font-family:'Noto Serif TC',serif; font-size:13px; letter-spacing:3px; cursor:pointer; }
+.login-err { font-size:11px; color:var(--rust); display:none; text-align:center; }
+
+/* Admin tabs */
+.adm-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.adm-tab { padding:6px 14px; font-size:11px; border:1px solid var(--border); border-radius:2px; cursor:pointer; background:white; color:var(--muted); letter-spacing:1px; transition:all 0.1s; }
+.adm-tab.active { background:var(--ink); color:white; border-color:var(--ink); }
+.adm-tab.closed-tab { border-style:dashed; }
+
+/* Month toggle */
+.month-toggle-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px; }
+.month-toggle-item { padding:10px 8px; text-align:center; border:1px solid var(--border); border-radius:2px; cursor:pointer; font-size:12px; background:white; transition:all 0.1s; }
+.month-toggle-item.open-m  { background:#e8f5e9; border-color:var(--sage); color:var(--sage); }
+.month-toggle-item.close-m { background:var(--cream); color:var(--muted); border-style:dashed; }
+
+/* Admin calendar */
+.adm-wdays { display:grid; grid-template-columns:repeat(7,1fr); background:var(--cream); border:1px solid var(--border); border-bottom:none; }
+.adm-wdays div { text-align:center; padding:5px 2px; font-size:10px; color:var(--muted); }
+.adm-grid { display:grid; grid-template-columns:repeat(7,1fr); border-left:1px solid var(--border); border-top:1px solid var(--border); margin-bottom:14px; }
+.adm-cell { border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:3px; display:flex; flex-direction:column; gap:2px; min-height:72px; }
+.adm-cell.empty { background:var(--cream); opacity:0.4; }
+.adm-num { font-family:'Cormorant Garamond',serif; font-size:11px; color:var(--gold); margin-bottom:1px; cursor:pointer; text-decoration:underline dotted; }
+.adm-off-btn { font-size:7px; padding:2px 3px; border:1px solid var(--border); border-radius:1px; background:var(--cream); color:var(--muted); cursor:pointer; text-align:center; }
+.adm-off-btn.on { background:var(--booked-bg); color:var(--booked-text); border-color:#2a1e14; }
+.adm-tag { font-size:clamp(6px,1.2vw,8px); padding:2px 3px; border:1px solid var(--border); border-radius:1px; background:var(--cream); color:var(--muted); cursor:pointer; text-align:center; line-height:1.3; }
+.adm-tag.on { background:var(--booked-bg); color:var(--booked-text); border-color:#2a1e14; }
+.adm-cell:has(.adm-tag:nth-child(8)) .adm-tag { font-size:5.5px; padding:1px 2px; }
+.adm-cell:has(.adm-tag:nth-child(6)) .adm-tag { font-size:6.5px; padding:1px 2px; }
+
+/* Day editor */
+#dayEditor { display:none; border:1px solid var(--border); border-left:3px solid var(--gold); padding:14px 16px; margin-bottom:14px; background:white; }
+
+.adm-save { width:100%; padding:11px; background:var(--sage); color:white; border:none; border-radius:2px; font-family:'Noto Serif TC',serif; font-size:13px; letter-spacing:3px; cursor:pointer; margin-bottom:6px; }
+.adm-save:hover { background:#5a8060; }
+.adm-note { font-size:10px; color:var(--muted); text-align:center; }
+
+@media(max-width:480px) {
+  .cal-cell { min-height:88px; padding:4px 3px; }
+  .slot-tag { font-size:9px; padding:3px 2px; }
+  .svc-grid { grid-template-columns:1fr 1fr; }
+  .month-grid { grid-template-columns:repeat(3,1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <div class="brand-name">Root mu</div>
+    <div class="year-label">2026</div>
+    <h1 class="title">預　約　表　單</h1>
+    <p class="subtitle-row">
+      <span class="subtitle-zh">RESERVATION FORM</span>
+      <span class="subtitle-ja">ご予約フォーム</span>
+    </p>
+  </div>
+
+  <!-- ── Home: month selector ── -->
+  <div id="homePage">
+    <div class="sec">選擇預約月份 SELECT MONTH</div>
+    <div class="month-grid" id="monthGrid"></div>
+  </div>
+
+  <!-- ── Booking page ── -->
+  <div id="bookingPage" style="display:none">
+    <div class="back-btn" onclick="goHome()">← 返回月份選擇</div>
+
+    <div class="sec" id="step1Label">① 選擇日期與時段（可複選）</div>
+    <div class="cal-wrap">
+      <div class="cal-head">
+        <span class="cal-head-month" id="calHeadMonth"></span>
+        <span class="cal-head-year">2026</span>
+      </div>
+      <div class="cal-wdays">
+        <div class="cal-wday">日</div><div class="cal-wday">一</div><div class="cal-wday">二</div>
+        <div class="cal-wday">三</div><div class="cal-wday">四</div><div class="cal-wday">五</div><div class="cal-wday">六</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <div class="extra-box">
+      <strong>◈ 可加開時段（需來訊確認）</strong>
+      <div class="badge-row">
+        <span class="badge">AM 08:30</span>
+        <span class="badge">AM 09:00</span>
+        <span class="badge">PM 17:00</span>
+        <span class="badge">PM 20:00</span>
+        <span class="badge badge-red">PM 21:30 <span class="surcharge">+$200加班費</span></span>
+      </div>
+      <div class="extra-encourage">
+        如果上面時段已劃掉，有另外可以加開時間可以詢問，<br>
+        不用緊張可以放心問我唷 🫶🏻🪞<br>
+        非常樂意回答！
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--cream);border:1px solid var(--border)"></div><span>可預約</span></div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--ink)"></div><span>已選擇（再點取消）</span></div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--booked-bg)"></div><span>已預約</span></div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--paper);border:1px solid var(--border)"></div><span>休息日</span></div>
+    </div>
+
+    <div class="sec">② 選擇預約項目（可複選）</div>
+    <div class="svc-grid" id="svcGrid"></div>
+
+    <div class="sec">③ 確認選擇</div>
+    <div class="summary" id="summary">
+      <div class="summary-title">YOUR SELECTIONS</div>
+      <ul class="summary-list" id="summaryList"></ul>
+    </div>
+
+    <div class="sec">④ 傳送到 LINE 確認</div>
+    <a id="lineBtn" class="line-btn" href="https://line.me/R/ti/p/@136rgadw" target="_blank">
+      <svg viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.630 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+      傳送預約詢問到 LINE
+    </a>
+    <p class="line-hint" id="lineHint">請先選擇時段與預約項目</p>
+    <p class="note">可複選多個時段與項目，LINE 訊息將自動帶入所有內容<br>We will confirm your reservation within 24 hours</p>
+  </div>
+</div>
+
+<!-- Admin btn -->
+<button class="admin-btn" onclick="openAdmin()">⚙</button>
+
+<!-- Admin overlay -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-card">
+    <div class="admin-hd">
+      <h3>後台管理 ADMIN</h3>
+      <button class="admin-x" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="admin-body">
+      <!-- Login -->
+      <div id="loginWrap" class="login-wrap">
+        <label>管理員密碼</label>
+        <input type="password" id="pwInput" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="login-err" id="loginErr">密碼錯誤，請再試一次</div>
+        <button class="login-btn" onclick="doLogin()">登入 LOGIN</button>
+      </div>
+
+      <!-- Admin panel -->
+      <div id="adminPanel" style="display:none">
+
+        <!-- Month open/close -->
+        <p style="font-size:10px;letter-spacing:3px;color:var(--gold);margin-bottom:8px;font-family:'Cormorant Garamond',serif">月份開放狀態 MONTHS</p>
+        <div class="month-toggle-grid" id="monthToggleGrid"></div>
+        <hr style="border:none;border-top:1px solid var(--border);margin-bottom:14px">
+
+        <!-- Month tabs -->
+        <p style="font-size:10px;letter-spacing:3px;color:var(--gold);margin-bottom:8px;font-family:'Cormorant Garamond',serif">編輯月份 EDIT MONTH</p>
+        <div class="adm-tabs" id="admTabs"></div>
+
+        <!-- Calendar editor -->
+        <div id="admCalWrap">
+          <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.8">點日期數字（金色）可針對該日新增/刪除時段；點時段標籤標記已預約；點「休息」整天休假</p>
+          <div class="adm-wdays"><div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div></div>
+          <div class="adm-grid" id="admGrid"></div>
+
+          <!-- Day editor -->
+          <div id="dayEditor">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <span id="dayEditorTitle" style="font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--ink);letter-spacing:1px"></span>
+              <span onclick="closeDayEditor()" style="cursor:pointer;color:var(--muted);font-size:16px">✕</span>
+            </div>
+            <p style="font-size:10px;color:var(--muted);margin-bottom:8px">此日時段（點擊刪除）：</p>
+            <div id="daySlotsList" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;min-height:24px"></div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input id="daySlotInput" type="text" placeholder="新增時段 e.g. 09:00" maxlength="5"
+                style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:2px;font-family:'Noto Serif TC',serif;font-size:13px;outline:none;background:white;color:var(--ink);"
+                onkeydown="if(event.key==='Enter')addDaySlot()">
+              <button onclick="addDaySlot()" style="padding:7px 14px;background:var(--ink);color:white;border:none;border-radius:2px;font-family:'Noto Serif TC',serif;font-size:12px;cursor:pointer;white-space:nowrap">＋ 新增</button>
+            </div>
+          </div>
+
+          <button class="adm-save" onclick="saveAdmin()">儲存變更 SAVE</button>
+          <p class="adm-note">儲存後前台即時更新</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════
+   CONFIG
+══════════════════════════════ */
+const PW = '86088';
+
+const MONTHS = [
+  { m:6,  zh:'六月',  en:'June',      days:30, start:0 },
+  { m:7,  zh:'七月',  en:'July',      days:31, start:3 },
+  { m:8,  zh:'八月',  en:'August',    days:31, start:6 },
+  { m:9,  zh:'九月',  en:'September', days:30, start:1 },
+  { m:10, zh:'十月',  en:'October',   days:31, start:3 },
+  { m:11, zh:'十一月',en:'November',  days:30, start:0 },
+  { m:12, zh:'十二月',en:'December',  days:31, start:2 },
+];
+
+const DEFAULT_SLOTS = ['11:00','13:00','15:00','18:30'];
+const SVCS = ['單根睫毛嫁接','中式美睫','根源拉提','減齡技術（需配合嫁接單根）','下睫毛','卸除睫毛'];
+const WDS  = ['日','一','二','三','四','五','六'];
+
+/* ══════════════════════════════
+   STATE
+══════════════════════════════ */
+// Stored per month key e.g. "2026-7"
+// openMonths: Set of month keys that are open
+let openMonths = new Set();
+let monthData  = {}; // { "2026-7": { booked: [...], offs: [...], daySlots: {1:[...], ...} } }
+
+let currentMonth = null; // { m, zh, en, days, start }
+let picks = [];
+let svcs  = new Set();
+
+// Admin working copies
+let aOpen     = new Set();
+let aBooked   = new Set();
+let aOffs     = new Set();
+let aDaySlots = {};
+let admMonth  = null;
+let editingDay = null;
+
+/* ══════════════════════════════
+   STORAGE
+══════════════════════════════ */
+function mKey(m) { return `2026-${m}`; }
+
+function load() {
+  try {
+    const om = JSON.parse(localStorage.getItem('open_months') || '["2026-6","2026-7","2026-8","2026-9","2026-10","2026-11","2026-12"]');
+    openMonths = new Set(om);
+  } catch(e) { openMonths = new Set(MONTHS.map(m => mKey(m.m))); }
+
+  MONTHS.forEach(mo => {
+    const k = mKey(mo.m);
+    try {
+      const d = JSON.parse(localStorage.getItem('data_'+k) || '{}');
+      monthData[k] = {
+        booked:   new Set(d.booked   || []),
+        offs:     new Set((d.offs    || []).map(Number)),
+        daySlots: {}
+      };
+      if (d.daySlots) Object.keys(d.daySlots).forEach(dk => { monthData[k].daySlots[Number(dk)] = d.daySlots[dk]; });
+    } catch(e) {
+      monthData[k] = { booked: new Set(), offs: new Set(), daySlots: {} };
+    }
+  });
+}
+
+function saveMonthData(k) {
+  const d = monthData[k];
+  const ds = {};
+  Object.keys(d.daySlots).forEach(dk => { ds[dk] = d.daySlots[Number(dk)]; });
+  localStorage.setItem('data_'+k, JSON.stringify({ booked:[...d.booked], offs:[...d.offs], daySlots:ds }));
+}
+
+/* ══════════════════════════════
+   HOME PAGE
+══════════════════════════════ */
+function buildHome() {
+  const g = document.getElementById('monthGrid');
+  g.innerHTML = '';
+  MONTHS.forEach(mo => {
+    const k = mKey(mo.m);
+    const isOpen = openMonths.has(k);
+    const card = document.createElement('div');
+    card.className = 'month-card' + (isOpen ? '' : ' closed');
+    card.innerHTML = `<div class="month-num">${mo.m}</div><div class="month-zh">${mo.zh}</div><div class="month-en">${mo.en}</div>`;
+    if (isOpen) card.onclick = () => openBooking(mo);
+    g.appendChild(card);
+  });
+}
+
+function goHome() {
+  picks = []; svcs = new Set();
+  document.getElementById('homePage').style.display = '';
+  document.getElementById('bookingPage').style.display = 'none';
+  currentMonth = null;
+}
+
+/* ══════════════════════════════
+   BOOKING PAGE
+══════════════════════════════ */
+function openBooking(mo) {
+  currentMonth = mo;
+  picks = []; svcs = new Set();
+  document.getElementById('homePage').style.display = 'none';
+  document.getElementById('bookingPage').style.display = '';
+  document.getElementById('calHeadMonth').textContent = mo.zh + ' ' + mo.en;
+  buildCal();
+  buildSvcs();
+  renderSummary();
+  renderLine();
+  window.scrollTo(0,0);
+}
+
+function getSlotsForDayFront(d) {
+  const k = mKey(currentMonth.m);
+  return monthData[k].daySlots[d] ? [...monthData[k].daySlots[d]] : [...DEFAULT_SLOTS];
+}
+
+function buildCal() {
+  const mo  = currentMonth;
+  const k   = mKey(mo.m);
+  const data = monthData[k];
+  const g   = document.getElementById('calGrid');
+  g.innerHTML = '';
+  for (let i=0; i<mo.start; i++) {
+    const e = document.createElement('div'); e.className='cal-cell empty'; g.appendChild(e);
+  }
+  for (let d=1; d<=mo.days; d++) {
+    const dow   = (mo.start+d-1)%7;
+    const isOff = data.offs.has(d);
+    const cell  = document.createElement('div');
+    cell.className = ['cal-cell', dow===0?'sun':'', dow===6?'sat':'', isOff?'day-off-cell':''].join(' ').trim();
+    const num = document.createElement('div'); num.className='cal-cell-num'; num.textContent=d;
+    cell.appendChild(num);
+    if (isOff) {
+      const r = document.createElement('div'); r.className='rest-label'; r.textContent='休息';
+      cell.appendChild(r);
+    } else {
+      getSlotsForDayFront(d).forEach(t => {
+        const tag = document.createElement('div');
+        tag.className = 'slot-tag' + (data.booked.has(`${d}-${t}`)?' booked':'');
+        tag.textContent = t;
+        if (!data.booked.has(`${d}-${t}`)) tag.addEventListener('click', () => togglePick(d, t, tag));
+        cell.appendChild(tag);
+      });
+    }
+    g.appendChild(cell);
+  }
+}
+
+function togglePick(day, time, tag) {
+  const idx = picks.findIndex(p => p.day===day && p.time===time);
+  if (idx >= 0) { picks.splice(idx,1); tag.classList.remove('picked'); }
+  else {
+    const dow = (currentMonth.start+day-1)%7;
+    picks.push({ day, time, label:`${currentMonth.m}月${day}日（週${WDS[dow]}） ${time}` });
+    picks.sort((a,b) => a.day!==b.day ? a.day-b.day : a.time.localeCompare(b.time));
+    tag.classList.add('picked');
+  }
+  renderSummary(); renderLine();
+}
+
+function buildSvcs() {
+  const g = document.getElementById('svcGrid'); g.innerHTML='';
+  SVCS.forEach(s => {
+    const item = document.createElement('div'); item.className='svc-item';
+    item.innerHTML=`<span class="svc-check"></span><span>${s}</span>`;
+    item.addEventListener('click', () => {
+      if (svcs.has(s)) { svcs.delete(s); item.classList.remove('on'); item.querySelector('.svc-check').textContent=''; }
+      else             { svcs.add(s);    item.classList.add('on');    item.querySelector('.svc-check').textContent='✓'; }
+      renderSummary(); renderLine();
+    });
+    g.appendChild(item);
+  });
+}
+
+function renderSummary() {
+  const box=document.getElementById('summary'), list=document.getElementById('summaryList');
+  list.innerHTML='';
+  if (picks.length===0 && svcs.size===0) { box.classList.remove('show'); return; }
+  box.classList.add('show');
+  if (picks.length) {
+    const h=document.createElement('li'); h.innerHTML='<span style="font-size:10px;letter-spacing:2px;color:var(--muted)">時段</span>'; list.appendChild(h);
+    picks.forEach((p,i) => {
+      const li=document.createElement('li');
+      li.innerHTML=`<span class="s-num">${i+1}.</span><span>${p.label}</span><span class="s-del">✕</span>`;
+      li.querySelector('.s-del').onclick=()=>removePick(p.day,p.time);
+      list.appendChild(li);
+    });
+  }
+  if (svcs.size) {
+    const h2=document.createElement('li'); h2.style.marginTop='8px';
+    h2.innerHTML='<span style="font-size:10px;letter-spacing:2px;color:var(--muted)">預約項目</span>'; list.appendChild(h2);
+    [...svcs].forEach(s => { const li=document.createElement('li'); li.innerHTML=`<span class="s-num">◆</span><span>${s}</span>`; list.appendChild(li); });
+  }
+}
+
+function removePick(day, time) {
+  picks = picks.filter(p=>!(p.day===day&&p.time===time));
+  document.querySelectorAll('.slot-tag.picked').forEach(t => {
+    if (t.textContent===time) { const c=t.parentElement; const n=c.querySelector('.cal-cell-num'); if(n&&parseInt(n.textContent)===day) t.classList.remove('picked'); }
+  });
+  renderSummary(); renderLine();
+}
+
+function renderLine() {
+  const btn=document.getElementById('lineBtn'), hint=document.getElementById('lineHint');
+  if (picks.length===0 && svcs.size===0) { btn.href='https://line.me/R/ti/p/@136rgadw'; hint.textContent='請先選擇時段與預約項目'; return; }
+  let msg=`【預約詢問/及項目】\n（2026年${currentMonth.m}月）`;
+  if (picks.length) { msg+='\n📅 希望預約時段：\n'; msg+=picks.map((p,i)=>`${i+1}. ${p.label}`).join('\n'); }
+  if (svcs.size)    { msg+='\n\n🪞🦋預約項目：\n'; msg+=[...svcs].map(s=>`• ${s}`).join('\n'); }
+  msg+='\n\n請問以上是否可以安排呢，謝謝🌱';
+  btn.href=`https://line.me/R/oaMessage/%40136rgadw/?${encodeURIComponent(msg)}`;
+  hint.textContent='點擊後開啟 LINE，訊息已自動填入，送出即完成詢問';
+}
+
+/* ══════════════════════════════
+   ADMIN
+══════════════════════════════ */
+function openAdmin() { document.getElementById('adminOverlay').classList.add('open'); }
+function closeAdmin() {
+  document.getElementById('adminOverlay').classList.remove('open');
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('pwInput').value='';
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('adminPanel').style.display='none';
+  closeDayEditor();
+}
+function doLogin() {
+  if (document.getElementById('pwInput').value===PW) {
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+    aOpen = new Set(openMonths);
+    buildAdminMonthToggles();
+    buildAdminTabs();
+    selectAdmMonth(MONTHS[0]);
+  } else { document.getElementById('loginErr').style.display='block'; }
+}
+
+/* Month open/close toggles */
+function buildAdminMonthToggles() {
+  const g=document.getElementById('monthToggleGrid'); g.innerHTML='';
+  MONTHS.forEach(mo => {
+    const k=mKey(mo.m);
+    const item=document.createElement('div');
+    item.className='month-toggle-item '+(aOpen.has(k)?'open-m':'close-m');
+    item.textContent=(aOpen.has(k)?'✓ ':'✕ ')+mo.zh;
+    item.onclick=()=>{
+      if(aOpen.has(k)){aOpen.delete(k);}else{aOpen.add(k);}
+      buildAdminMonthToggles();
+      buildAdminTabs();
+    };
+    g.appendChild(item);
+  });
+}
+
+/* Month tabs */
+function buildAdminTabs() {
+  const g=document.getElementById('admTabs'); g.innerHTML='';
+  MONTHS.forEach(mo => {
+    const k=mKey(mo.m);
+    const tab=document.createElement('div');
+    tab.className='adm-tab'+(aOpen.has(k)?'':' closed-tab')+(admMonth&&admMonth.m===mo.m?' active':'');
+    tab.textContent=mo.m+'月';
+    tab.onclick=()=>selectAdmMonth(mo);
+    g.appendChild(tab);
+  });
+}
+
+function selectAdmMonth(mo) {
+  admMonth = mo;
+  const k = mKey(mo.m);
+  const d = monthData[k];
+  aBooked   = new Set(d.booked);
+  aOffs     = new Set(d.offs);
+  aDaySlots = {};
+  for (let day=1; day<=mo.days; day++) {
+    aDaySlots[day] = d.daySlots[day] ? [...d.daySlots[day]] : [...DEFAULT_SLOTS];
+  }
+  closeDayEditor();
+  buildAdmCal();
+  buildAdminTabs();
+}
+
+function getSlotsForDayAdm(d) { return aDaySlots[d] || [...DEFAULT_SLOTS]; }
+
+function buildAdmCal() {
+  const mo=admMonth, g=document.getElementById('admGrid'); g.innerHTML='';
+  for (let i=0; i<mo.start; i++) { const e=document.createElement('div'); e.className='adm-cell empty'; g.appendChild(e); }
+  for (let d=1; d<=mo.days; d++) {
+    const cell=document.createElement('div'); cell.className='adm-cell'; cell.dataset.day=d;
+    const num=document.createElement('div'); num.className='adm-num'; num.textContent=d; num.title='點擊編輯時段'; num.onclick=()=>openDayEditor(d);
+    cell.appendChild(num);
+    const offBtn=document.createElement('div');
+    offBtn.className='adm-off-btn'+(aOffs.has(d)?' on':'');
+    offBtn.textContent=aOffs.has(d)?'🌙休息':'休息';
+    offBtn.onclick=()=>{
+      if(aOffs.has(d)){aOffs.delete(d);offBtn.classList.remove('on');offBtn.textContent='休息';cell.querySelectorAll('.adm-tag').forEach(t=>t.style.opacity='1');}
+      else            {aOffs.add(d);   offBtn.classList.add('on');   offBtn.textContent='🌙休息';cell.querySelectorAll('.adm-tag').forEach(t=>t.style.opacity='0.3');}
+    };
+    cell.appendChild(offBtn);
+    getSlotsForDayAdm(d).forEach(t=>{
+      const tag=document.createElement('div'); const key=`${d}-${t}`;
+      tag.className='adm-tag'+(aBooked.has(key)?' on':''); tag.textContent=t;
+      tag.style.opacity=aOffs.has(d)?'0.3':'1';
+      tag.onclick=()=>{ if(aOffs.has(d))return; if(aBooked.has(key)){aBooked.delete(key);tag.classList.remove('on');}else{aBooked.add(key);tag.classList.add('on');} };
+      cell.appendChild(tag);
+    });
+    g.appendChild(cell);
+  }
+}
+
+function openDayEditor(d) {
+  editingDay=d; const dow=(admMonth.start+d-1)%7;
+  document.getElementById('dayEditorTitle').textContent=`${admMonth.m}月${d}日（週${WDS[dow]}） 時段編輯`;
+  document.getElementById('dayEditor').style.display='block';
+  document.getElementById('daySlotInput').value='';
+  renderDaySlots();
+}
+function closeDayEditor() { editingDay=null; document.getElementById('dayEditor').style.display='none'; }
+
+function renderDaySlots() {
+  const wrap=document.getElementById('daySlotsList'); wrap.innerHTML='';
+  const slots=getSlotsForDayAdm(editingDay);
+  if(!slots.length){wrap.innerHTML='<span style="font-size:11px;color:var(--muted)">（無時段）</span>';return;}
+  slots.forEach(t=>{
+    const tag=document.createElement('div');
+    tag.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--cream);border:1px solid var(--border);border-radius:3px;font-size:12px;color:var(--ink);cursor:pointer;';
+    tag.innerHTML=`${t} <span style="color:var(--rust);font-size:11px">✕</span>`;
+    tag.onclick=()=>{
+      aDaySlots[editingDay]=aDaySlots[editingDay].filter(s=>s!==t);
+      aBooked.delete(`${editingDay}-${t}`);
+      renderDaySlots(); refreshAdmCell(editingDay);
+    };
+    wrap.appendChild(tag);
+  });
+}
+
+function parseTime(val) {
+  val=val.trim();
+  if(/^\d{3}$/.test(val))    val='0'+val[0]+':'+val.slice(1);
+  if(/^\d{4}$/.test(val))    val=val.slice(0,2)+':'+val.slice(2);
+  if(/^\d{1}:\d{2}$/.test(val)) val='0'+val;
+  return /^\d{2}:\d{2}$/.test(val)?val:null;
+}
+
+function addDaySlot() {
+  const inp=document.getElementById('daySlotInput');
+  const val=parseTime(inp.value);
+  if(!val){alert('請輸入正確時間格式，例如 09:00');return;}
+  if(aDaySlots[editingDay].includes(val)){alert('此時段已存在');inp.value='';return;}
+  aDaySlots[editingDay].push(val); aDaySlots[editingDay].sort(); inp.value='';
+  renderDaySlots(); refreshAdmCell(editingDay);
+}
+
+function refreshAdmCell(d) {
+  const cell=document.querySelector(`#admGrid .adm-cell[data-day="${d}"]`); if(!cell)return;
+  cell.querySelectorAll('.adm-tag').forEach(t=>t.remove());
+  getSlotsForDayAdm(d).forEach(t=>{
+    const tag=document.createElement('div'); const key=`${d}-${t}`;
+    tag.className='adm-tag'+(aBooked.has(key)?' on':''); tag.textContent=t;
+    tag.style.opacity=aOffs.has(d)?'0.3':'1';
+    tag.onclick=()=>{ if(aOffs.has(d))return; if(aBooked.has(key)){aBooked.delete(key);tag.classList.remove('on');}else{aBooked.add(key);tag.classList.add('on');} };
+    cell.appendChild(tag);
+  });
+}
+
+function saveAdmin() {
+  // save open months
+  openMonths = new Set(aOpen);
+  localStorage.setItem('open_months', JSON.stringify([...openMonths]));
+
+  // save current month data
+  if (admMonth) {
+    const k=mKey(admMonth.m);
+    monthData[k].booked   = new Set(aBooked);
+    monthData[k].offs     = new Set(aOffs);
+    monthData[k].daySlots = {};
+    Object.keys(aDaySlots).forEach(dk=>{
+      const arr=aDaySlots[Number(dk)];
+      if(arr.join(',')!==DEFAULT_SLOTS.join(',')) monthData[k].daySlots[Number(dk)]=[...arr];
+    });
+    saveMonthData(k);
+    // refresh front if same month open
+    if (currentMonth && currentMonth.m===admMonth.m) { buildCal(); renderSummary(); renderLine(); }
+  }
+  buildHome();
+  closeAdmin();
+  alert('✓ 儲存成功！');
+}
+
+/* ══════════════════════════════
+   INIT
+══════════════════════════════ */
+load();
+buildHome();
+</script>
+</body>
+</html>
